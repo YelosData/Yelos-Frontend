@@ -1,65 +1,37 @@
+import { createContext, type ReactNode, useContext, useState } from "react";
+import type { AuthResponse, AuthUser } from "../types/auth";
 import {
-    createContext,
-    useContext,
-    useState,
-    type ReactNode,
-} from "react";
+    clearAuth,
+    getAuthUser,
+    saveAuth,
+    updateStoredUserCredits,
+} from "../components/helper/authStorage";
 
-import type { Role, AuthUser } from "../types/auth";
-
-type AuthContextValue = {
+type AuthContextType = {
     user: AuthUser | null;
-    login: (user: AuthUser) => void;
+    login: (auth: AuthResponse) => void;
     logout: () => void;
     updateCredits: (credits: number) => void;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
-
-function getStoredUser(): AuthUser | null {
-    const storedUser = localStorage.getItem("user");
-
-    if (!storedUser) {
-        return null;
-    }
-
-    try {
-        return JSON.parse(storedUser) as AuthUser;
-    } catch (err) {
-        console.error("Failed to parse stored user", err);
-        localStorage.removeItem("user");
-        return null;
-    }
-}
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<AuthUser | null>(getStoredUser());
+    const [user, setUser] = useState<AuthUser | null>(getAuthUser());
 
-    function login(user: AuthUser) {
-        localStorage.setItem("user", JSON.stringify(user));
-        setUser(user);
+    function login(auth: AuthResponse) {
+        const savedUser = saveAuth(auth);
+        setUser(savedUser);
     }
 
     function logout() {
-        localStorage.removeItem("user");
+        clearAuth();
         setUser(null);
     }
 
     function updateCredits(credits: number) {
-        setUser((currentUser) => {
-            if (!currentUser) {
-                return null;
-            }
-
-            const updatedUser = {
-                ...currentUser,
-                credits,
-            };
-
-            localStorage.setItem("user", JSON.stringify(updatedUser));
-
-            return updatedUser;
-        });
+        const updatedUser = updateStoredUserCredits(credits);
+        setUser(updatedUser);
     }
 
     return (

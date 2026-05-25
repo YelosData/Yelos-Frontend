@@ -28,15 +28,9 @@ export default function RegisterPage() {
                 role,
             });
 
-            login({
-                id: res.id,
-                username: res.username,
-                role: res.role,
-                credits: res.credits,
-            });
+            login(res);
 
             navigate("/marketplace");
-            navigate("/");
         } catch (e) {
             console.log(e);
             // error handling logic

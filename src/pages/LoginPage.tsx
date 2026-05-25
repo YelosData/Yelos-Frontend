@@ -20,12 +20,8 @@ export default function LoginPage() {
                 username,
                 password
             });
-            login({
-                id: res.id,
-                username: res.username,
-                role: res.role,
-                credits: res.credits,
-            });
+
+            login(res);
 
             navigate("/");
         } catch (e) {

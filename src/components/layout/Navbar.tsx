@@ -18,7 +18,6 @@ import { useAuth } from "../../hooks/useAuth";
 
 type StoredUser = AuthUser & {
     username?: string;
-    userName?: string;
 };
 
 export default function Navbar() {
