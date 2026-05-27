@@ -15,30 +15,10 @@ import {
 import {
     addCredits,
     withdrawCredits,
-    type CreditTransactionResponse,
 } from "../api/credit";
 import { useAuth } from "../hooks/useAuth";
 
-import type { Role, AuthUser } from "../types/auth"
-
-
 type TransactionMode = "ADD" | "WITHDRAW";
-
-function getStoredUser(): AuthUser | null {
-    const storedUser = localStorage.getItem("user");
-
-    if (!storedUser) {
-        return null;
-    }
-
-    try {
-        return JSON.parse(storedUser) as AuthUser;
-    } catch (err) {
-        console.error("Failed to parse stored user", err);
-        localStorage.removeItem("user");
-        return null;
-    }
-}
 
 const textFieldSx = {
     "& .MuiInputLabel-root": {

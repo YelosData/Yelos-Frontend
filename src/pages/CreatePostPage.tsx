@@ -16,7 +16,6 @@ import {
 import { createPost } from "../api/post";
 import type { Genre } from "../types/post";
 
-import type { Role, AuthUser } from "../types/auth"
 import { useAuth } from "../hooks/useAuth";
 
 const genreOptions: Array<{ label: string; value: Genre }> = [
@@ -29,21 +28,6 @@ const genreOptions: Array<{ label: string; value: Genre }> = [
     { label: "Other", value: "OTHER" },
 ];
 
-function getStoredUser(): AuthUser | null {
-    const storedUser = localStorage.getItem("user");
-
-    if (!storedUser) {
-        return null;
-    }
-
-    try {
-        return JSON.parse(storedUser) as AuthUser;
-    } catch (err) {
-        console.error("Failed to parse stored user", err);
-        localStorage.removeItem("user");
-        return null;
-    }
-}
 
 export default function CreatePostPage() {
     const navigate = useNavigate();

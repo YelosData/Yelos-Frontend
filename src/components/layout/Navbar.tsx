@@ -13,13 +13,8 @@ import {
     Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router";
-import type { AuthUser } from "../../types/auth";
 import { useAuth } from "../../hooks/useAuth";
 
-type StoredUser = AuthUser & {
-    username?: string;
-    userName?: string;
-};
 
 export default function Navbar() {
     const navigate = useNavigate();

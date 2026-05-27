@@ -61,7 +61,7 @@ export default function PostDetailsPage() {
                 setError("");
 
                 const postResult = await getDataPostById(numericPostId);
-                setPost(postResult);
+                setPost(postResult);  // Change api to not return full content and only use my purchase page to show full details
 
                 if (user?.role === "BUSINESS") {
                     const purchases = await getPurchasesByUser(user.id);

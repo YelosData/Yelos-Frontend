@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Login } from "../api/auth";
 import { useNavigate } from "react-router";
-import { Box, Button, Container, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useAuth } from "../hooks/useAuth";
 
 export default function LoginPage() {
@@ -20,16 +20,13 @@ export default function LoginPage() {
                 username,
                 password
             });
-            login({
-                id: res.id,
-                username: res.username,
-                role: res.role,
-                credits: res.credits,
-            });
+
+            login(res);
 
             navigate("/");
         } catch (e) {
             console.log(e);  // implement error handling
+            setError("");
         } finally {
             setLoading(false);
         }

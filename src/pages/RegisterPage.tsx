@@ -1,7 +1,7 @@
 import { useState } from "react";
-import type { RegisterRequest, Role } from "../types/auth";
+import type { Role } from "../types/auth";
 import { Register } from "../api/auth";
-import { Box, Button, Container, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 
@@ -28,17 +28,12 @@ export default function RegisterPage() {
                 role,
             });
 
-            login({
-                id: res.id,
-                username: res.username,
-                role: res.role,
-                credits: res.credits,
-            });
+            login(res);
 
             navigate("/marketplace");
-            navigate("/");
         } catch (e) {
             console.log(e);
+            setError("");
             // error handling logic
         } finally {
             setLoading(false);

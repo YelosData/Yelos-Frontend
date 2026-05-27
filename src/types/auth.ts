@@ -12,7 +12,7 @@ export type RegisterRequest = {
   role: Role;
 };
 
-export type AuthResponse = {
+export type AuthUser = {
   id: number;
   username: string;
   email: string;
@@ -20,9 +20,12 @@ export type AuthResponse = {
   credits: number;
 };
 
-export type AuthUser = {
+export type AuthResponse = {
   id: number;
   username: string;
+  email: string;
   role: Role;
   credits: number;
+  accessToken: string;
+  refreshToken: string;
 };
