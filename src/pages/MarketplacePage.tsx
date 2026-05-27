@@ -19,7 +19,7 @@ import {
 import type { SelectChangeEvent } from "@mui/material/Select";
 import { getMarketplacePosts } from "../api/post";
 import type {
-    PostPreview,
+    DataPostPreview,
     Genre,
     SortOption,
 } from "../types/post";
@@ -65,7 +65,7 @@ export default function MarketplacePage() {
     const navigate = useNavigate();
     const { user } = useAuth();
 
-    const [posts, setPosts] = useState<PostPreview[]>([]);
+    const [posts, setPosts] = useState<DataPostPreview[]>([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalElements, setTotalElements] = useState(0);

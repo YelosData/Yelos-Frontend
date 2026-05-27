@@ -26,6 +26,7 @@ export default function LoginPage() {
             navigate("/");
         } catch (e) {
             console.log(e);  // implement error handling
+            setError("");
         } finally {
             setLoading(false);
         }

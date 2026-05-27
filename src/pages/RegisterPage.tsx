@@ -33,6 +33,7 @@ export default function RegisterPage() {
             navigate("/marketplace");
         } catch (e) {
             console.log(e);
+            setError("");
             // error handling logic
         } finally {
             setLoading(false);
