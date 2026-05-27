@@ -15,7 +15,6 @@ import {
 import {
     addCredits,
     withdrawCredits,
-    type CreditTransactionResponse,
 } from "../api/credit";
 import { useAuth } from "../hooks/useAuth";
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Login } from "../api/auth";
 import { useNavigate } from "react-router";
-import { Box, Button, Container, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useAuth } from "../hooks/useAuth";
 
 export default function LoginPage() {

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import type { RegisterRequest, Role } from "../types/auth";
+import type { Role } from "../types/auth";
 import { Register } from "../api/auth";
-import { Box, Button, Container, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 
