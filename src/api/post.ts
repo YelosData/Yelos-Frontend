@@ -36,7 +36,19 @@ export async function getDataPostById(id: number): Promise<DataPostDetail> {
 export async function createPost(
   data: CreatePostRequest,
 ): Promise<DataPostDetail> {
-  const response = await apiClient.post<DataPostDetail>("/api/datapost", data);
+  const formData = new FormData();
+
+  formData.append("userId", String(data.userId));
+  formData.append("genre", data.genre);
+  formData.append("title", data.title);
+  formData.append("summary", data.summary);
+  formData.append("price", String(data.price));
+  formData.append("file", data.file);
+
+  const response = await apiClient.post<DataPostDetail>(
+    "/api/datapost",
+    formData,
+  );
 
   return response.data;
 }

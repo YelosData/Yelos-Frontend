@@ -23,6 +23,9 @@ export default function LoginPage() {
 
             login(res);
 
+            console.log("USER:", localStorage.getItem("user"));
+            console.log("ACCESS:", localStorage.getItem("accessToken"));
+            console.log("REFRESH:", localStorage.getItem("refreshToken"));
             navigate("/");
         } catch (e) {
             console.log(e);  // implement error handling

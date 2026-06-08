@@ -26,10 +26,12 @@ export type DataPostDetail = {
   username: string;
   summary: string;
   title: string;
-  content: string;
   genre: Genre;
   price: number;
   createdAt: string;
+  fileName: string | null;
+  fileType: string | null;
+  fileSize: number | null;
 };
 
 export type PageResponse<T> = {
@@ -52,7 +54,7 @@ export type CreatePostRequest = {
   userId: number;
   genre: Genre;
   title: string;
-  content: string;
   summary: string;
   price: number;
+  file: File;
 };

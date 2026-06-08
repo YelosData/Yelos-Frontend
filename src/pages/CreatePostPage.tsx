@@ -28,6 +28,7 @@ const genreOptions: Array<{ label: string; value: Genre }> = [
     { label: "Other", value: "OTHER" },
 ];
 
+const allowedExtensions = [".csv", ".json", ".txt", ".xlsx"];
 
 export default function CreatePostPage() {
     const navigate = useNavigate();
@@ -35,11 +36,49 @@ export default function CreatePostPage() {
 
     const [title, setTitle] = useState("");
     const [summary, setSummary] = useState("");
-    const [content, setContent] = useState("");
     const [genre, setGenre] = useState<Genre>("EDUCATION");
     const [price, setPrice] = useState("");
+    const [file, setFile] = useState<File | null>(null);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    function formatFileSize(sizeInBytes: number) {
+        if (sizeInBytes < 1024) {
+            return `${sizeInBytes} B`;
+        }
+
+        if (sizeInBytes < 1024 * 1024) {
+            return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+        }
+
+        return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const selectedFile = event.target.files?.[0] ?? null;
+
+        if (!selectedFile) {
+            setFile(null);
+            return;
+        }
+
+        const lowerCaseFileName = selectedFile.name.toLowerCase();
+        const isAllowedFile = allowedExtensions.some((extension) =>
+            lowerCaseFileName.endsWith(extension),
+        );
+
+        if (!isAllowedFile) {
+            setError("Only CSV, JSON, TXT, or XLSX files are allowed.");
+            setFile(null);
+            event.target.value = "";
+            return;
+        }
+
+        setError("");
+        setFile(selectedFile);
+    }
+
 
     async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -56,11 +95,15 @@ export default function CreatePostPage() {
 
         const cleanedTitle = title.trim();
         const cleanedSummary = summary.trim();
-        const cleanedContent = content.trim();
         const numericPrice = Number(price);
 
-        if (!cleanedTitle || !cleanedSummary || !cleanedContent) {
+        if (!cleanedTitle || !cleanedSummary) {
             setError("Please fill in all required fields.");
+            return;
+        }
+
+        if (!file) {
+            setError("Please upload a dataset file.");
             return;
         }
 
@@ -78,8 +121,8 @@ export default function CreatePostPage() {
                 genre,
                 title: cleanedTitle,
                 summary: cleanedSummary,
-                content: cleanedContent,
                 price: numericPrice,
+                file
             });
 
             navigate("/marketplace");
@@ -493,16 +536,72 @@ export default function CreatePostPage() {
                                         sx={textFieldSx}
                                     />
 
-                                    <TextField
-                                        label="Full content"
-                                        value={content}
-                                        onChange={(event) => setContent(event.target.value)}
-                                        fullWidth
-                                        multiline
-                                        minRows={8}
-                                        placeholder="Paste or describe the full anonymised dataset content here."
-                                        sx={textFieldSx}
-                                    />
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 3,
+                                            bgcolor: "rgba(2, 6, 23, 0.35)",
+                                            border: "1px dashed rgba(103, 232, 249, 0.42)",
+                                        }}
+                                    >
+                                        <Stack spacing={1.2}>
+                                            <Typography sx={{ fontWeight: 900, color: "#FFFFFF" }}>
+                                                Dataset file
+                                            </Typography>
+
+                                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                                                Upload the actual dataset file. Buyers can only download
+                                                it after purchasing.
+                                            </Typography>
+
+                                            <Stack
+                                                direction={{ xs: "column", sm: "row" }}
+                                                spacing={1.5}
+                                                sx={{ alignItems: { xs: "stretch", sm: "center" } }}
+                                            >
+                                                <Button
+                                                    variant="outlined"
+                                                    component="label"
+                                                    sx={{
+                                                        width: "fit-content",
+                                                        borderRadius: 999,
+                                                        textTransform: "none",
+                                                        fontWeight: 900,
+                                                        color: "#E0F2FE",
+                                                        borderColor: "rgba(125, 211, 252, 0.32)",
+                                                        "&:hover": {
+                                                            borderColor: "#67E8F9",
+                                                            bgcolor: "rgba(6, 182, 212, 0.08)",
+                                                        },
+                                                    }}
+                                                >
+                                                    Choose file
+                                                    <input
+                                                        hidden
+                                                        type="file"
+                                                        accept=".csv,.json,.txt,.xlsx"
+                                                        onChange={handleFileChange}
+                                                    />
+                                                </Button>
+
+                                                <Typography variant="body2" sx={{ color: "#CBD5E1" }}>
+                                                    {file ? file.name : "No file selected"}
+                                                </Typography>
+                                            </Stack>
+
+                                            {file && (
+                                                <Typography variant="caption" sx={{ color: "#94A3B8" }}>
+                                                    Size: {formatFileSize(file.size)} · Type:{" "}
+                                                    {file.type || "Unknown"}
+                                                </Typography>
+                                            )}
+
+                                            <Typography variant="caption" sx={{ color: "#64748B" }}>
+                                                Supported formats: CSV, JSON, TXT, XLSX.
+                                            </Typography>
+                                        </Stack>
+                                    </Box>
+
 
                                     <TextField
                                         label="Price"
