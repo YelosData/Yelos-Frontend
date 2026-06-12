@@ -9,7 +9,10 @@ import PostDetailsPage from "./pages/PostDetailsPage";
 import CreditTransactionPage from "./pages/CreditTransactionPage";
 import MyPostsPage from "./pages/MyPostPage";
 import MyPurchasesPage from "./pages/MyPurchasesPage";
-
+import CreateRequestPage from "./pages/CreateRequestPage";
+import MyRequestsPage from "./pages/MyRequestsPage";
+import RequestDetailPage from "./pages/RequestDetailPage";
+import RequestMarketplacePage from "./pages/RequestMarketplacePage";
 
 
 export default function App() {
@@ -26,6 +29,10 @@ export default function App() {
         <Route path="/credittransaction" element={<CreditTransactionPage />} />
         <Route path="/my-posts" element={<MyPostsPage />} />
         <Route path="/my-purchases" element={<MyPurchasesPage />} />
+        <Route path="/create-request" element={<CreateRequestPage />} />
+        <Route path="/my-requests" element={<MyRequestsPage />} />
+        <Route path="/requests/:requestId" element={<RequestDetailPage />} />
+        <Route path="/request-marketplace" element={<RequestMarketplacePage />} />
       </Routes>
     </>
   )

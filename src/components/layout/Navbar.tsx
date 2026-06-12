@@ -23,6 +23,9 @@ export default function Navbar() {
 
     const displayName = user?.username ?? "User";
 
+    const isSeller = user?.role === "SELLER";
+    const isBusiness = user?.role === "BUSINESS";
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
 
@@ -38,6 +41,11 @@ export default function Navbar() {
         logout();
         handleMenuClose();
         navigate("/");
+    }
+
+    function handleMenuNavigate(path: string) {
+        handleMenuClose();
+        navigate(path);
     }
 
     function navButton(label: string, path: string) {
@@ -56,6 +64,21 @@ export default function Navbar() {
             >
                 {label}
             </Button>
+        );
+    }
+
+    function menuItem(label: string, path: string) {
+        return (
+            <MenuItem
+                onClick={() => handleMenuNavigate(path)}
+                sx={{
+                    py: 1.3,
+                    fontWeight: 700,
+                    color: "#334155",
+                }}
+            >
+                {label} { }
+            </MenuItem>
         );
     }
 
@@ -122,16 +145,19 @@ export default function Navbar() {
                     {navButton("Home", "/")}
                     {navButton("Marketplace", "/marketplace")}
 
-                    {user?.role === "SELLER" && (
+                    {isSeller && (
                         <>
                             {navButton("Create Post", "/create-post")}
                             {navButton("My Posts", "/my-posts")}
+                            {navButton("Browse Requests", "/requests")} { }
                         </>
                     )}
 
-                    {user?.role === "BUSINESS" && (
+                    {isBusiness && (
                         <>
                             {navButton("My Purchases", "/my-purchases")}
+                            {navButton("Create Request", "/create-request")} { }
+                            {navButton("My Requests", "/my-requests")} { }
                         </>
                     )}
                 </Box>
@@ -344,47 +370,22 @@ export default function Navbar() {
 
                                 <Divider />
 
-                                <MenuItem
-                                    onClick={() => {
-                                        handleMenuClose();
-                                        navigate("/history");
-                                    }}
-                                    sx={{
-                                        py: 1.3,
-                                        fontWeight: 700,
-                                        color: "#334155",
-                                    }}
-                                >
-                                    Transaction history
-                                </MenuItem>
+                                {isSeller && menuItem("Browse Requests", "/requests")} { }
 
-                                <MenuItem
-                                    onClick={() => {
-                                        handleMenuClose();
-                                        navigate("/profile");
-                                    }}
-                                    sx={{
-                                        py: 1.3,
-                                        fontWeight: 700,
-                                        color: "#334155",
-                                    }}
-                                >
-                                    Profile settings
-                                </MenuItem>
+                                {isBusiness && (
+                                    <> { }
+                                        {menuItem("Create Request", "/create-request")} { }
+                                        {menuItem("My Requests", "/my-requests")} { }
+                                    </>
+                                )}
 
-                                <MenuItem
-                                    onClick={() => {
-                                        handleMenuClose();
-                                        navigate("/credittransaction");
-                                    }}
-                                    sx={{
-                                        py: 1.3,
-                                        fontWeight: 700,
-                                        color: "#334155",
-                                    }}
-                                >
-                                    Add credits
-                                </MenuItem>
+                                {(isSeller || isBusiness) && <Divider />} { }
+
+                                {menuItem("Transaction history", "/history")} { }
+
+                                {menuItem("Profile settings", "/profile")} { }
+
+                                {menuItem("Add credits", "/credittransaction")} { }
 
                                 <Divider />
 
