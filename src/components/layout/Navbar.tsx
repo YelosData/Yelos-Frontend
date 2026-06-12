@@ -149,7 +149,7 @@ export default function Navbar() {
                         <>
                             {navButton("Create Post", "/create-post")}
                             {navButton("My Posts", "/my-posts")}
-                            {navButton("Browse Requests", "/requests")} { }
+                            {navButton("Browse Requests", "/request-marketplace")} { }
                         </>
                     )}
 
@@ -380,10 +380,6 @@ export default function Navbar() {
                                 )}
 
                                 {(isSeller || isBusiness) && <Divider />} { }
-
-                                {menuItem("Transaction history", "/history")} { }
-
-                                {menuItem("Profile settings", "/profile")} { }
 
                                 {menuItem("Add credits", "/credittransaction")} { }
 
