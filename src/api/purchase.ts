@@ -1,4 +1,4 @@
-import type { PageResponse } from "../types/post";
+import type { Genre, PageResponse } from "../types/post";
 import { apiClient } from "./client";
 
 export type PurchasePostRequest = {
@@ -13,10 +13,21 @@ export type PurchaseResponse = {
   postId: number;
   price: number;
   buyerCredits: number;
+  genre: Genre;
   titleSnapshot: string;
   summarySnapshot: string;
-  contentSnapshot: string;
+  fileNameSnapshot: string | null;
+  fileTypeSnapshot: string | null;
+  fileSizeSnapshot: number | null;
   purchasedAt: string;
+};
+
+export type PurchaseDownloadResponse = {
+  downloadUrl: string;
+  fileName: string | null;
+  fileType: string | null;
+  fileSize: number | null;
+  expiresInSeconds: number;
 };
 
 export async function purchasePost(
@@ -57,6 +68,16 @@ export async function getPurchaseHistoryByUser(
         sort,
       },
     },
+  );
+
+  return response.data;
+}
+
+export async function getPurchaseDownloadUrl(
+  purchaseId: number,
+): Promise<PurchaseDownloadResponse> {
+  const response = await apiClient.get<PurchaseDownloadResponse>(
+    `/api/purchase/${purchaseId}/download`,
   );
 
   return response.data;

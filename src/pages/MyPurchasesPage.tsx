@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import {
     Box,
+    Button,
     Card,
     CardContent,
     Chip,
@@ -16,7 +17,11 @@ import {
     Typography,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
-import { getPurchaseHistoryByUser, type PurchaseResponse } from "../api/purchase";
+import {
+    getPurchaseDownloadUrl,
+    getPurchaseHistoryByUser,
+    type PurchaseResponse,
+} from "../api/purchase";
 import type { Genre } from "../types/post";
 import { useAuth } from "../hooks/useAuth";
 
@@ -73,6 +78,8 @@ export default function MyPurchasesPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    const [downloadLoadingId, setDownloadLoadingId] = useState<number | null>(null);
+
     useEffect(() => {
         async function fetchPurchases() {
             if (!user?.id) {
@@ -120,6 +127,18 @@ export default function MyPurchasesPage() {
         fetchPurchases();
     }, [user?.id, user?.role, page, selectedGenre, sort]);
 
+    function formatFileSize(sizeInBytes: number) {
+        if (sizeInBytes < 1024) {
+            return `${sizeInBytes} B`;
+        }
+
+        if (sizeInBytes < 1024 * 1024) {
+            return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+        }
+
+        return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
     function handleGenreChange(event: SelectChangeEvent) {
         setSelectedGenre(event.target.value as Genre | "ALL");
         setPage(1);
@@ -132,6 +151,22 @@ export default function MyPurchasesPage() {
 
     function handlePageChange(_: ChangeEvent<unknown>, nextPage: number) {
         setPage(nextPage);
+    }
+
+    async function handleDownload(purchaseId: number) {
+        try {
+            setDownloadLoadingId(purchaseId);
+            setError("");
+
+            const result = await getPurchaseDownloadUrl(purchaseId);
+
+            window.open(result.downloadUrl, "_blank", "noopener,noreferrer");
+        } catch (err) {
+            console.error(err);
+            setError("Failed to generate download link. Please try again.");
+        } finally {
+            setDownloadLoadingId(null);
+        }
     }
 
     return (
@@ -207,7 +242,7 @@ export default function MyPurchasesPage() {
                             }}
                         >
                             Browse your purchased datasets by genre and sort order. Each
-                            purchase shows the saved snapshot, including the full content.
+                            purchase includes the saved listing snapshot and a secure download link.
                         </Typography>
                     </Stack>
                 </Container>
@@ -576,7 +611,7 @@ export default function MyPurchasesPage() {
                                                             letterSpacing: 0.7,
                                                         }}
                                                     >
-                                                        FULL PURCHASED CONTENT
+                                                        DATASET FILE
                                                     </Typography>
 
                                                     <Box
@@ -586,20 +621,53 @@ export default function MyPurchasesPage() {
                                                             borderRadius: 3,
                                                             bgcolor: "rgba(2, 6, 23, 0.72)",
                                                             border: "1px solid rgba(148, 163, 184, 0.14)",
-                                                            maxHeight: 420,
-                                                            overflow: "auto",
                                                         }}
                                                     >
-                                                        <Typography
-                                                            variant="body2"
+                                                        <Stack
+                                                            direction={{ xs: "column", sm: "row" }}
+                                                            spacing={2}
                                                             sx={{
-                                                                color: "#E2E8F0",
-                                                                lineHeight: 1.8,
-                                                                whiteSpace: "pre-wrap",
+                                                                justifyContent: "space-between",
+                                                                alignItems: { xs: "stretch", sm: "center" },
                                                             }}
                                                         >
-                                                            {purchase.contentSnapshot}
-                                                        </Typography>
+                                                            <Stack spacing={0.6}>
+                                                                <Typography sx={{ color: "#E2E8F0", fontWeight: 900 }}>
+                                                                    {purchase.fileNameSnapshot || "Dataset file"}
+                                                                </Typography>
+
+                                                                <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                                                                    {purchase.fileTypeSnapshot || "Unknown file type"}
+                                                                    {purchase.fileSizeSnapshot
+                                                                        ? ` · ${formatFileSize(purchase.fileSizeSnapshot)}`
+                                                                        : ""}
+                                                                </Typography>
+
+                                                                <Typography variant="caption" sx={{ color: "#64748B" }}>
+                                                                    This file is stored privately and can only be downloaded through a temporary secure link.
+                                                                </Typography>
+                                                            </Stack>
+
+                                                            <Button
+                                                                variant="contained"
+                                                                disabled={downloadLoadingId === purchase.id}
+                                                                onClick={() => handleDownload(purchase.id)}
+                                                                sx={{
+                                                                    borderRadius: 999,
+                                                                    textTransform: "none",
+                                                                    fontWeight: 900,
+                                                                    px: 3,
+                                                                    bgcolor: "#2563EB",
+                                                                    boxShadow: "0 14px 34px rgba(37, 99, 235, 0.34)",
+                                                                    "&:hover": {
+                                                                        bgcolor: "#1D4ED8",
+                                                                        boxShadow: "0 16px 42px rgba(37, 99, 235, 0.44)",
+                                                                    },
+                                                                }}
+                                                            >
+                                                                {downloadLoadingId === purchase.id ? "Preparing..." : "Download"}
+                                                            </Button>
+                                                        </Stack>
                                                     </Box>
                                                 </Box>
 

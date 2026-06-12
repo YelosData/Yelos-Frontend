@@ -34,6 +34,22 @@ function formatDate(dateString: string): string {
     });
 }
 
+function formatFileSize(sizeInBytes: number | null | undefined): string {
+    if (sizeInBytes == null) {
+        return "Unknown size";
+    }
+
+    if (sizeInBytes < 1024) {
+        return `${sizeInBytes} B`;
+    }
+
+    if (sizeInBytes < 1024 * 1024) {
+        return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function MyPostsPage() {
     const { user } = useAuth();
 
@@ -382,7 +398,7 @@ export default function MyPostsPage() {
                                                         letterSpacing: 0.7,
                                                     }}
                                                 >
-                                                    FULL CONTENT
+                                                    DATASET FILE
                                                 </Typography>
 
                                                 <Box
@@ -392,20 +408,23 @@ export default function MyPostsPage() {
                                                         borderRadius: 3,
                                                         bgcolor: "rgba(2, 6, 23, 0.72)",
                                                         border: "1px solid rgba(148, 163, 184, 0.14)",
-                                                        maxHeight: 360,
-                                                        overflow: "auto",
                                                     }}
                                                 >
-                                                    <Typography
-                                                        variant="body2"
-                                                        sx={{
-                                                            color: "#E2E8F0",
-                                                            lineHeight: 1.8,
-                                                            whiteSpace: "pre-wrap",
-                                                        }}
-                                                    >
-                                                        {post.content}
-                                                    </Typography>
+                                                    <Stack spacing={0.8}>
+                                                        <Typography sx={{ color: "#E2E8F0", fontWeight: 900 }}>
+                                                            {post.fileName || "Dataset file"}
+                                                        </Typography>
+
+                                                        <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                                                            {post.fileType || "Unknown file type"} ·{" "}
+                                                            {formatFileSize(post.fileSize)}
+                                                        </Typography>
+
+                                                        <Typography variant="caption" sx={{ color: "#64748B" }}>
+                                                            This file is stored privately in cloud storage. Buyers can only
+                                                            download it after purchasing the dataset.
+                                                        </Typography>
+                                                    </Stack>
                                                 </Box>
                                             </Box>
 
