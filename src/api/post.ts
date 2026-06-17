@@ -5,6 +5,7 @@ import type {
   DataPostPreview,
   GetMarketplacePostsParams,
   PageResponse,
+  UpdatePostRequest,
 } from "../types/post";
 
 export async function getMarketplacePosts(
@@ -69,4 +70,36 @@ export async function getPostsByUserId(
   );
 
   return res.data;
+}
+
+export async function updatePost(
+  data: UpdatePostRequest,
+): Promise<DataPostDetail> {
+  const formData = new FormData();
+
+  formData.append("userId", String(data.userId));
+  formData.append("title", data.title);
+  formData.append("summary", data.summary);
+  formData.append("price", String(data.price));
+  formData.append("genre", data.genre);
+
+  if (data.file) {
+    formData.append("file", data.file);
+  }
+
+  const response = await apiClient.put<DataPostDetail>(
+    `api/datapost/posts/${data.postId}`,
+    formData,
+  );
+
+  return response.data;
+}
+
+export async function deletePost(
+  postId: number,
+  userId: number,
+): Promise<void> {
+  await apiClient.delete(`api/datapost/posts/${postId}`, {
+    params: { userId },
+  });
 }
