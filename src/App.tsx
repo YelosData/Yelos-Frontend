@@ -13,6 +13,7 @@ import CreateRequestPage from "./pages/CreateRequestPage";
 import MyRequestsPage from "./pages/MyRequestsPage";
 import RequestDetailPage from "./pages/RequestDetailPage";
 import RequestMarketplacePage from "./pages/RequestMarketplacePage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/my-requests" element={<MyRequestsPage />} />
         <Route path="/requests/:requestId" element={<RequestDetailPage />} />
         <Route path="/request-marketplace" element={<RequestMarketplacePage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
       </Routes>
     </>
   )

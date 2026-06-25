@@ -18,7 +18,6 @@ import type { DataPostDetail, Genre } from "../types/post";
 import { useAuth } from "../hooks/useAuth";
 import { getPurchasesByUser, purchasePost } from "../api/purchase";
 
-
 function formatGenre(genre: Genre): string {
     return genre
         .split("_")
@@ -61,7 +60,7 @@ export default function PostDetailsPage() {
                 setError("");
 
                 const postResult = await getDataPostById(numericPostId);
-                setPost(postResult);  // Change api to not return full content and only use my purchase page to show full details
+                setPost(postResult);
 
                 if (user?.role === "BUSINESS") {
                     const purchases = await getPurchasesByUser(user.id);
@@ -117,7 +116,6 @@ export default function PostDetailsPage() {
             updateCredits(purchase.buyerCredits);
             setAlreadyPurchased(true);
             setPurchaseMessage("Purchase successful. This dataset has been added to your purchases.");
-
 
             console.log("Purchase response:", purchase);
         } catch (err) {
@@ -233,7 +231,6 @@ export default function PostDetailsPage() {
                 pb: 8,
             }}
         >
-            {/* Header */}
             <Box
                 sx={{
                     position: "relative",
@@ -288,6 +285,19 @@ export default function PostDetailsPage() {
                                     }}
                                 />
                             )}
+
+                            {post.adminReviewed && (
+                                <Chip
+                                    label="Admin reviewed"
+                                    sx={{
+                                        width: "fit-content",
+                                        bgcolor: "rgba(34, 197, 94, 0.12)",
+                                        color: "#BBF7D0",
+                                        border: "1px solid rgba(34, 197, 94, 0.24)",
+                                        fontWeight: 900,
+                                    }}
+                                />
+                            )}
                         </Stack>
 
                         <Typography
@@ -301,10 +311,8 @@ export default function PostDetailsPage() {
                                 maxWidth: 850,
                             }}
                         >
-                            {(post as DataPostDetail & { title?: string }).title ||
-                                `${formatGenre(post.genre)} Dataset`}
+                            {post.title || `${formatGenre(post.genre)} Dataset`}
                         </Typography>
-
                     </Stack>
                 </Container>
             </Box>
@@ -317,7 +325,6 @@ export default function PostDetailsPage() {
                         gap: 3,
                     }}
                 >
-                    {/* Main details */}
                     <Stack spacing={3}>
                         <Card
                             elevation={0}
@@ -333,7 +340,11 @@ export default function PostDetailsPage() {
                                 <Stack spacing={2.5}>
                                     <Box>
                                         <Typography variant="h5" sx={{ fontWeight: 950 }}>
-                                            Summarised dataset content
+                                            AI summary
+                                        </Typography>
+
+                                        <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.6 }}>
+                                            This summary is generated from the uploaded dataset.
                                         </Typography>
                                     </Box>
 
@@ -345,7 +356,56 @@ export default function PostDetailsPage() {
                                             borderRadius: 3,
                                             bgcolor: "rgba(2, 6, 23, 0.48)",
                                             border: "1px solid rgba(148, 163, 184, 0.16)",
-                                            maxHeight: 520,
+                                            overflow: "auto",
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                color: "#CBD5E1",
+                                                lineHeight: 1.75,
+                                                fontSize: "0.98rem",
+                                                whiteSpace: "pre-wrap",
+                                                wordBreak: "break-word",
+                                            }}
+                                        >
+                                            {post.summary || "No summary available."}
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+                            </CardContent>
+                        </Card>
+
+                        <Card
+                            elevation={0}
+                            sx={{
+                                bgcolor: "rgba(15, 23, 42, 0.82)",
+                                color: "#FFFFFF",
+                                border: "1px solid rgba(148, 163, 184, 0.18)",
+                                borderRadius: 4,
+                                boxShadow: "0 24px 70px rgba(0, 0, 0, 0.22)",
+                            }}
+                        >
+                            <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                                <Stack spacing={2.5}>
+                                    <Box>
+                                        <Typography variant="h5" sx={{ fontWeight: 950 }}>
+                                            Dataset preview
+                                        </Typography>
+
+                                        <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.6 }}>
+                                            First few rows generated from the anonymised dataset.
+                                        </Typography>
+                                    </Box>
+
+                                    <Divider sx={{ borderColor: "rgba(148, 163, 184, 0.16)" }} />
+
+                                    <Box
+                                        sx={{
+                                            p: { xs: 2, md: 3 },
+                                            borderRadius: 3,
+                                            bgcolor: "rgba(2, 6, 23, 0.48)",
+                                            border: "1px solid rgba(148, 163, 184, 0.16)",
+                                            maxHeight: 360,
                                             overflow: "auto",
                                         }}
                                     >
@@ -362,7 +422,7 @@ export default function PostDetailsPage() {
                                                 fontSize: "0.92rem",
                                             }}
                                         >
-                                            {post.summary}
+                                            {post.previewCsv || "No preview available."}
                                         </Typography>
                                     </Box>
                                 </Stack>
@@ -389,7 +449,6 @@ export default function PostDetailsPage() {
                         </Button>
                     </Stack>
 
-                    {/* Purchase/sidebar panel */}
                     <Card
                         elevation={0}
                         sx={{
@@ -603,7 +662,6 @@ export default function PostDetailsPage() {
                                             : `Buy for ${post.price} credits`}
                                     </Button>
                                 )}
-
                             </Stack>
                         </CardContent>
                     </Card>

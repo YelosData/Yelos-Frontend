@@ -532,6 +532,20 @@ export default function MarketplacePage() {
                                                                     }}
                                                                 />
                                                             )}
+
+                                                            {post.adminReviewed && (
+                                                                <Chip
+                                                                    label="Admin reviewed"
+                                                                    size="small"
+                                                                    sx={{
+                                                                        bgcolor: "rgba(34, 197, 94, 0.12)",
+                                                                        color: "#BBF7D0",
+                                                                        border: "1px solid rgba(34, 197, 94, 0.24)",
+                                                                        fontWeight: 900,
+                                                                    }}
+                                                                />
+                                                            )}
+
                                                         </Stack>
 
                                                         <Typography
@@ -560,13 +574,20 @@ export default function MarketplacePage() {
 
                                                         <Typography
                                                             variant="body2"
+                                                            title={post.summary}
                                                             sx={{
                                                                 color: "#94A3B8",
                                                                 lineHeight: 1.7,
                                                                 mt: 1,
+                                                                display: "-webkit-box",
+                                                                WebkitLineClamp: 4,
+                                                                WebkitBoxOrient: "vertical",
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                                wordBreak: "break-word",
                                                             }}
                                                         >
-                                                            {post.summary}
+                                                            {post.summary || "No summary available."}
                                                         </Typography>
                                                     </Box>
 

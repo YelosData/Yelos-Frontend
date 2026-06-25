@@ -35,7 +35,6 @@ export default function CreatePostPage() {
     const { user } = useAuth();
 
     const [title, setTitle] = useState("");
-    const [summary, setSummary] = useState("");
     const [genre, setGenre] = useState<Genre>("EDUCATION");
     const [price, setPrice] = useState("");
     const [file, setFile] = useState<File | null>(null);
@@ -79,7 +78,6 @@ export default function CreatePostPage() {
         setFile(selectedFile);
     }
 
-
     async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
         event.preventDefault();
 
@@ -94,11 +92,10 @@ export default function CreatePostPage() {
         }
 
         const cleanedTitle = title.trim();
-        const cleanedSummary = summary.trim();
         const numericPrice = Number(price);
 
-        if (!cleanedTitle || !cleanedSummary) {
-            setError("Please fill in all required fields.");
+        if (!cleanedTitle) {
+            setError("Please enter a title.");
             return;
         }
 
@@ -120,9 +117,8 @@ export default function CreatePostPage() {
                 userId: user.id,
                 genre,
                 title: cleanedTitle,
-                summary: cleanedSummary,
                 price: numericPrice,
-                file
+                file,
             });
 
             navigate("/marketplace");
@@ -367,9 +363,9 @@ export default function CreatePostPage() {
                                 fontSize: { xs: "1rem", md: "1.08rem" },
                             }}
                         >
-                            Add a title, genre, summary, full dataset content, and credit
-                            price. Buyers will see the summary first and inspect details
-                            before purchasing.
+                            Add a title, genre, full dataset file, and credit price.
+                            Yelos will anonymise the file and generate the listing summary
+                            automatically.
                         </Typography>
                     </Stack>
                 </Container>
@@ -432,10 +428,11 @@ export default function CreatePostPage() {
                                     }}
                                 >
                                     <Typography sx={{ color: "#A5F3FC", fontWeight: 900 }}>
-                                        2. Summarise buyer value
+                                        2. Let AI generate the summary
                                     </Typography>
                                     <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5 }}>
-                                        Explain what the dataset contains and what it can be used for.
+                                        The backend will create a buyer-facing summary and preview
+                                        from the uploaded dataset.
                                     </Typography>
                                 </Box>
 
@@ -448,11 +445,10 @@ export default function CreatePostPage() {
                                     }}
                                 >
                                     <Typography sx={{ color: "#E0F2FE", fontWeight: 900 }}>
-                                        3. Keep content anonymised
+                                        3. Upload raw dataset securely
                                     </Typography>
                                     <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5 }}>
-                                        Remove names, emails, phone numbers, addresses, and other
-                                        direct identifiers before listing.
+                                        Yelos will run PII filtering and store the anonymised file.
                                     </Typography>
                                 </Box>
                             </Stack>
@@ -524,18 +520,6 @@ export default function CreatePostPage() {
                                         ))}
                                     </TextField>
 
-                                    <TextField
-                                        label="Summary"
-                                        value={summary}
-                                        onChange={(event) => setSummary(event.target.value)}
-                                        fullWidth
-                                        multiline
-                                        minRows={3}
-                                        placeholder="Briefly describe what buyers will get from this dataset."
-                                        helperText={`${summary.length}/1000 recommended max`}
-                                        sx={textFieldSx}
-                                    />
-
                                     <Box
                                         sx={{
                                             p: 2,
@@ -550,8 +534,8 @@ export default function CreatePostPage() {
                                             </Typography>
 
                                             <Typography variant="body2" sx={{ color: "#94A3B8" }}>
-                                                Upload the actual dataset file. Buyers can only download
-                                                it after purchasing.
+                                                Upload the actual dataset file. The backend will
+                                                anonymise it and generate the preview and summary.
                                             </Typography>
 
                                             <Stack
@@ -601,7 +585,6 @@ export default function CreatePostPage() {
                                             </Typography>
                                         </Stack>
                                     </Box>
-
 
                                     <TextField
                                         label="Price"
