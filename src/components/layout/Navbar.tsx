@@ -25,6 +25,7 @@ export default function Navbar() {
 
     const isSeller = user?.role === "SELLER";
     const isBusiness = user?.role === "BUSINESS";
+    const isAdmin = user?.role === "ADMIN";
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
@@ -160,6 +161,13 @@ export default function Navbar() {
                             {navButton("My Requests", "/my-requests")} { }
                         </>
                     )}
+
+                    {isAdmin && (
+                        <>
+                            {navButton("Admin Dashboard", "/admin/dashboard")}
+                        </>
+                    )}
+
                 </Box>
 
                 {/* Right side */}
@@ -332,10 +340,17 @@ export default function Navbar() {
                                                     mt: 0.7,
                                                     height: 22,
                                                     bgcolor:
-                                                        user.role === "SELLER"
-                                                            ? "rgba(37, 99, 235, 0.12)"
-                                                            : "rgba(6, 182, 212, 0.14)",
-                                                    color: user.role === "SELLER" ? "#1D4ED8" : "#0891B2",
+                                                        user.role === "ADMIN"
+                                                            ? "rgba(220, 38, 38, 0.12)"
+                                                            : user.role === "SELLER"
+                                                                ? "rgba(37, 99, 235, 0.12)"
+                                                                : "rgba(6, 182, 212, 0.14)",
+                                                    color:
+                                                        user.role === "ADMIN"
+                                                            ? "#DC2626"
+                                                            : user.role === "SELLER"
+                                                                ? "#1D4ED8"
+                                                                : "#0891B2",
                                                     fontWeight: 800,
                                                     fontSize: "0.7rem",
                                                 }}
@@ -378,6 +393,8 @@ export default function Navbar() {
                                         {menuItem("My Requests", "/my-requests")} { }
                                     </>
                                 )}
+
+                                {isAdmin && menuItem("Admin Dashboard", "/admin/dashboard")}
 
                                 {(isSeller || isBusiness) && <Divider />} { }
 

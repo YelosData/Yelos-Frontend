@@ -1,21 +1,65 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import {
+    Alert,
     Box,
+    Button,
     Card,
     CardContent,
     Chip,
     CircularProgress,
     Container,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     Divider,
+    MenuItem,
     Pagination,
     Stack,
+    TextField,
     Typography,
 } from "@mui/material";
 import type { DataPostDetail, Genre } from "../types/post";
-import { getPostsByUserId } from "../api/post";
+import { deletePost, getPostsByUserId, updatePost } from "../api/post";
 import { useAuth } from "../hooks/useAuth";
 
 const PAGE_SIZE = 6;
+
+const genreOptions: Array<{ label: string; value: Genre }> = [
+    { label: "Education", value: "EDUCATION" },
+    { label: "Customer Support", value: "CUSTOMER_SUPPORT" },
+    { label: "Finance", value: "FINANCE" },
+    { label: "Coding", value: "CODING" },
+    { label: "Health & Wellness", value: "HEALTH_WELLNESS" },
+    { label: "Travel", value: "TRAVEL" },
+    { label: "Other", value: "OTHER" },
+];
+
+const textFieldSx = {
+    "& .MuiInputBase-input": {
+        color: "#FFFFFF",
+    },
+    "& .MuiInputLabel-root": {
+        color: "#94A3B8",
+    },
+    "& .MuiInputLabel-root.Mui-focused": {
+        color: "#67E8F9",
+    },
+    "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+            borderColor: "rgba(148, 163, 184, 0.28)",
+        },
+        "&:hover fieldset": {
+            borderColor: "rgba(125, 211, 252, 0.48)",
+        },
+        "&.Mui-focused fieldset": {
+            borderColor: "#67E8F9",
+        },
+    },
+    "& .MuiSvgIcon-root": {
+        color: "#CBD5E1",
+    },
+};
 
 function formatGenre(genre: Genre | string): string {
     return genre
@@ -24,7 +68,7 @@ function formatGenre(genre: Genre | string): string {
         .join(" ");
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString: string | null | undefined): string {
     if (!dateString) return "N/A";
 
     return new Date(dateString).toLocaleDateString("en-SG", {
@@ -59,6 +103,16 @@ export default function MyPostsPage() {
     const [totalElements, setTotalElements] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [editOpen, setEditOpen] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<DataPostDetail | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editSummary, setEditSummary] = useState("");
+    const [editGenre, setEditGenre] = useState<Genre>("EDUCATION");
+    const [editPrice, setEditPrice] = useState("");
+    const [editFile, setEditFile] = useState<File | null>(null);
+    const [actionError, setActionError] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
 
     useEffect(() => {
         async function fetchMyPosts() {
@@ -95,6 +149,102 @@ export default function MyPostsPage() {
 
     function handlePageChange(_: ChangeEvent<unknown>, nextPage: number) {
         setPage(nextPage);
+    }
+
+    function openEditDialog(post: DataPostDetail) {
+        setSelectedPost(post);
+        setEditTitle(post.title);
+        setEditSummary(post.summary);
+        setEditGenre(post.genre);
+        setEditPrice(String(post.price));
+        setEditFile(null);
+        setActionError("");
+        setEditOpen(true);
+    }
+
+    function closeEditDialog() {
+        if (saving) return;
+
+        setEditOpen(false);
+        setSelectedPost(null);
+        setEditFile(null);
+        setActionError("");
+    }
+
+    async function handleUpdatePost(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!user?.id || !selectedPost) return;
+
+        const cleanedTitle = editTitle.trim();
+        const cleanedSummary = editSummary.trim();
+        const numericPrice = Number(editPrice);
+
+        if (!cleanedTitle || !cleanedSummary) {
+            setActionError("Title and summary are required.");
+            return;
+        }
+
+        if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+            setActionError("Price must be greater than 0.");
+            return;
+        }
+
+        try {
+            setSaving(true);
+            setActionError("");
+
+            const updatedPost = await updatePost({
+                postId: selectedPost.id,
+                userId: user.id,
+                title: cleanedTitle,
+                summary: cleanedSummary,
+                genre: editGenre,
+                price: numericPrice,
+                file: editFile,
+            });
+
+            setPosts((currentPosts) =>
+                currentPosts.map((post) =>
+                    post.id === updatedPost.id ? updatedPost : post
+                )
+            );
+
+            closeEditDialog();
+        } catch (err) {
+            console.error(err);
+            setActionError("Failed to update post.");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function handleDeletePost(postId: number) {
+        if (!user?.id) return;
+
+        const confirmed = window.confirm(
+            "Delete this listing? Buyers who already purchased it will keep their purchase history."
+        );
+
+        if (!confirmed) return;
+
+        try {
+            setDeletingId(postId);
+            setActionError("");
+
+            await deletePost(postId, user.id);
+
+            setPosts((currentPosts) =>
+                currentPosts.filter((post) => post.id !== postId)
+            );
+
+            setTotalElements((currentTotal) => Math.max(currentTotal - 1, 0));
+        } catch (err) {
+            console.error(err);
+            setActionError("Failed to delete post.");
+        } finally {
+            setDeletingId(null);
+        }
     }
 
     return (
@@ -158,7 +308,7 @@ export default function MyPostsPage() {
                                 maxWidth: 820,
                             }}
                         >
-                            View the datasets you have listed online.
+                            Manage the datasets you have listed online.
                         </Typography>
 
                         <Typography
@@ -169,9 +319,8 @@ export default function MyPostsPage() {
                                 fontSize: { xs: "1rem", md: "1.08rem" },
                             }}
                         >
-                            See the full details of every dataset you have posted to the
-                            marketplace. This is a read-only view, so there are no edit or
-                            delete actions here.
+                            Update listing details, replace dataset files, or remove old listings from the
+                            marketplace. Replacing the file creates a new dataset version.
                         </Typography>
                     </Stack>
                 </Container>
@@ -220,6 +369,8 @@ export default function MyPostsPage() {
                             }}
                         />
                     </Box>
+
+                    {actionError && !editOpen && <Alert severity="error">{actionError}</Alert>}
 
                     {loading && (
                         <Box
@@ -323,7 +474,8 @@ export default function MyPostsPage() {
                                                             mt: 0.8,
                                                         }}
                                                     >
-                                                        Listed {formatDate(post.createdAt)}
+                                                        Listed {formatDate(post.createdAt)} · Updated{" "}
+                                                        {formatDate(post.updatedAt)}
                                                     </Typography>
                                                 </Box>
 
@@ -357,8 +509,57 @@ export default function MyPostsPage() {
                                                             fontWeight: 900,
                                                         }}
                                                     />
+
+                                                    <Chip
+                                                        label={`Version ${post.version ?? 1}`}
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: "rgba(14, 165, 233, 0.12)",
+                                                            color: "#BAE6FD",
+                                                            border: "1px solid rgba(14, 165, 233, 0.24)",
+                                                            fontWeight: 900,
+                                                        }}
+                                                    />
                                                 </Stack>
                                             </Box>
+
+
+                                            <Stack // NEW
+                                                direction={{ xs: "column", sm: "row" }}
+                                                spacing={1.2}
+                                                sx={{ justifyContent: "flex-end" }}
+                                            >
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => openEditDialog(post)}
+                                                    sx={{
+                                                        borderRadius: 999,
+                                                        textTransform: "none",
+                                                        fontWeight: 900,
+                                                        color: "#E0F2FE",
+                                                        borderColor: "rgba(125, 211, 252, 0.35)",
+                                                    }}
+                                                >
+                                                    Edit
+                                                </Button>
+
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    disabled={deletingId === post.id}
+                                                    onClick={() => handleDeletePost(post.id)}
+                                                    sx={{
+                                                        borderRadius: 999,
+                                                        textTransform: "none",
+                                                        fontWeight: 900,
+                                                        color: "#FECACA",
+                                                        borderColor: "rgba(248, 113, 113, 0.35)",
+                                                    }}
+                                                >
+                                                    {deletingId === post.id ? "Deleting..." : "Delete"}
+                                                </Button>
+                                            </Stack>
 
                                             <Divider
                                                 sx={{
@@ -546,6 +747,132 @@ export default function MyPostsPage() {
                     )}
                 </Stack>
             </Container>
+
+            <Dialog
+                open={editOpen}
+                onClose={closeEditDialog}
+                fullWidth
+                maxWidth="sm"
+                slotProps={{
+                    paper: {
+                        sx: {
+                            bgcolor: "#0F172A",
+                            color: "#FFFFFF",
+                            borderRadius: 3,
+                            border: "1px solid rgba(148, 163, 184, 0.18)",
+                        },
+                    },
+                }}
+            >
+                <Box component="form" onSubmit={handleUpdatePost}>
+                    <DialogTitle sx={{ fontWeight: 950 }}>Edit listing</DialogTitle>
+
+                    <DialogContent>
+                        <Stack spacing={2.2} sx={{ mt: 1 }}>
+                            {actionError && <Alert severity="error">{actionError}</Alert>}
+
+                            <TextField
+                                label="Title"
+                                value={editTitle}
+                                onChange={(event) => setEditTitle(event.target.value)}
+                                fullWidth
+                                sx={textFieldSx}
+                            />
+
+                            <TextField
+                                label="Summary"
+                                value={editSummary}
+                                onChange={(event) => setEditSummary(event.target.value)}
+                                fullWidth
+                                multiline
+                                minRows={3}
+                                sx={textFieldSx}
+                            />
+
+                            <TextField
+                                select
+                                label="Genre"
+                                value={editGenre}
+                                onChange={(event) => setEditGenre(event.target.value as Genre)}
+                                fullWidth
+                                sx={textFieldSx}
+                            >
+                                {genreOptions.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+
+                            <TextField
+                                label="Price"
+                                type="number"
+                                value={editPrice}
+                                onChange={(event) => setEditPrice(event.target.value)}
+                                fullWidth
+                                sx={textFieldSx}
+                                slotProps={{
+                                    htmlInput: {
+                                        min: 0,
+                                        step: "0.01",
+                                    },
+                                }}
+                            />
+
+                            <Button
+                                variant="outlined"
+                                component="label"
+                                sx={{
+                                    borderRadius: 2,
+                                    textTransform: "none",
+                                    fontWeight: 900,
+                                    color: "#E0F2FE",
+                                    borderColor: "rgba(125, 211, 252, 0.35)",
+                                    justifyContent: "flex-start",
+                                    py: 1.2,
+                                }}
+                            >
+                                {editFile ? editFile.name : "Replace dataset file optional"}
+                                <input
+                                    hidden
+                                    type="file"
+                                    accept=".csv,.json,.txt"
+                                    onChange={(event) => setEditFile(event.target.files?.[0] ?? null)}
+                                />
+                            </Button>
+
+                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                                Replacing the file will increase the dataset version. Editing title,
+                                summary, genre, or price will not.
+                            </Typography>
+                        </Stack>
+                    </DialogContent>
+
+                    <DialogActions sx={{ px: 3, pb: 3 }}>
+                        <Button
+                            onClick={closeEditDialog}
+                            disabled={saving}
+                            sx={{ textTransform: "none", fontWeight: 900 }}
+                        >
+                            Cancel
+                        </Button>
+
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={saving}
+                            sx={{
+                                borderRadius: 999,
+                                textTransform: "none",
+                                fontWeight: 900,
+                                bgcolor: "#2563EB",
+                            }}
+                        >
+                            {saving ? "Saving..." : "Save changes"}
+                        </Button>
+                    </DialogActions>
+                </Box>
+            </Dialog>
         </Box>
     );
 }
