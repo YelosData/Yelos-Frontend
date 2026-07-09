@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
     Alert,
@@ -50,12 +50,32 @@ const textFieldSx = {
 export default function CreditTransactionPage() {
     const navigate = useNavigate();
     const { user, updateCredits } = useAuth();
-    const [mode, setMode] = useState<TransactionMode>("ADD");
+    const [mode, setMode] = useState<TransactionMode>(
+        user?.role === "SELLER" ? "WITHDRAW" : "ADD"
+    );
     const [amount, setAmount] = useState("");
     const [displayCredits, setDisplayCredits] = useState(user?.credits ?? 0);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+
+    const isSeller = user?.role === "SELLER";
+    const isBuyer = user?.role === "BUSINESS";
+    const canAddCredits = isBuyer;
+
+    useEffect(() => {
+        if (isSeller && mode !== "WITHDRAW") {
+            setMode("WITHDRAW");
+            setError("");
+            setMessage("");
+        }
+    }, [isSeller, mode]);
+
+    useEffect(() => {
+        if (user?.credits !== undefined) {
+            setDisplayCredits(user.credits);
+        }
+    }, [user?.credits]);
 
 
     function handleAmountChange(value: string) {
@@ -76,6 +96,11 @@ export default function CreditTransactionPage() {
 
         if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
             setError("Amount must be a positive number.");
+            return;
+        }
+
+        if (mode === "ADD" && !canAddCredits) {
+            setError("Seller accounts can only withdraw credits.");
             return;
         }
 
@@ -258,8 +283,9 @@ export default function CreditTransactionPage() {
                                 fontSize: { xs: "1rem", md: "1.08rem" },
                             }}
                         >
-                            Add credits to purchase datasets or withdraw available credits
-                            from your account balance.
+                            {isSeller
+                                ? "Withdraw available seller credits from your account balance."
+                                : "Add credits to purchase datasets or withdraw available credits from your account balance."}
                         </Typography>
                     </Stack>
                 </Container>
@@ -345,12 +371,13 @@ export default function CreditTransactionPage() {
                                 <Stack spacing={2.5}>
                                     <Box>
                                         <Typography variant="h5" sx={{ fontWeight: 950 }}>
-                                            Credit transaction
+                                            {isSeller ? "Withdraw seller credits" : "Credit transaction"}
                                         </Typography>
 
                                         <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.6 }}>
-                                            Choose whether to add or withdraw credits, then enter the
-                                            amount to process.
+                                            {isSeller
+                                                ? "Seller accounts can only withdraw available credits. Enter the amount to withdraw."
+                                                : "Choose whether to add or withdraw credits, then enter the amount to process."}
                                         </Typography>
                                     </Box>
 
@@ -364,30 +391,32 @@ export default function CreditTransactionPage() {
                                             border: "1px solid rgba(148, 163, 184, 0.16)",
                                         }}
                                     >
-                                        <Button
-                                            type="button"
-                                            fullWidth
-                                            onClick={() => {
-                                                setMode("ADD");
-                                                setError("");
-                                                setMessage("");
-                                            }}
-                                            sx={{
-                                                borderRadius: 999,
-                                                textTransform: "none",
-                                                fontWeight: 900,
-                                                color: mode === "ADD" ? "#FFFFFF" : "#94A3B8",
-                                                bgcolor: mode === "ADD" ? "#2563EB" : "transparent",
-                                                "&:hover": {
-                                                    bgcolor:
-                                                        mode === "ADD"
-                                                            ? "#1D4ED8"
-                                                            : "rgba(255,255,255,0.06)",
-                                                },
-                                            }}
-                                        >
-                                            Add credits
-                                        </Button>
+                                        {canAddCredits && (
+                                            <Button
+                                                type="button"
+                                                fullWidth
+                                                onClick={() => {
+                                                    setMode("ADD");
+                                                    setError("");
+                                                    setMessage("");
+                                                }}
+                                                sx={{
+                                                    borderRadius: 999,
+                                                    textTransform: "none",
+                                                    fontWeight: 900,
+                                                    color: mode === "ADD" ? "#FFFFFF" : "#94A3B8",
+                                                    bgcolor: mode === "ADD" ? "#2563EB" : "transparent",
+                                                    "&:hover": {
+                                                        bgcolor:
+                                                            mode === "ADD"
+                                                                ? "#1D4ED8"
+                                                                : "rgba(255,255,255,0.06)",
+                                                    },
+                                                }}
+                                            >
+                                                Add credits
+                                            </Button>
+                                        )}
 
                                         <Button
                                             type="button"

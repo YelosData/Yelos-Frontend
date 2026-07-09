@@ -1,10 +1,24 @@
 import { useState } from "react";
 import type { Role } from "../types/auth";
 import { Register } from "../api/auth";
-import { Box, Button, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import {
+    Alert,
+    Box,
+    Button,
+    MenuItem,
+    Paper,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
 import { useNavigate } from "react-router";
 import { useAuth } from "../hooks/useAuth";
+import axios from "axios";
 
+type ApiErrorResponse = {
+    status?: number;
+    message?: string;
+};
 
 export default function RegisterPage() {
     const [username, setUsername] = useState<string>("");
@@ -12,15 +26,46 @@ export default function RegisterPage() {
     const [password, setPassword] = useState<string>("");
     const [role, setRole] = useState<Role>("SELLER");
     const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string>("");  // For error handling, implementation in the future
+    const [error, setError] = useState<string>("");
     const navigate = useNavigate();
     const { login } = useAuth();
+
+    const getRegisterErrorMessage = (e: unknown): string => {
+        if (axios.isAxiosError<ApiErrorResponse>(e)) {
+            const status = e.response?.status;
+            const message = e.response?.data?.message;
+
+            if (message) {
+                return message;
+            }
+
+            if (status === 409) {
+                return "Username or email already exists.";
+            }
+
+            if (status === 400) {
+                return "Invalid registration details. Please check your inputs.";
+            }
+
+            if (status === 403) {
+                return "You are not allowed to create this account.";
+            }
+
+            if (status && status >= 500) {
+                return "Server error. Please try again later.";
+            }
+        }
+
+        return "Something went wrong while creating your account. Please try again.";
+    };
 
     const handleSubmit: React.SubmitEventHandler<HTMLFormElement> = async (event) => {
         event.preventDefault();
 
         try {
+            setError("");
             setLoading(true);
+
             const res = await Register({
                 username,
                 email,
@@ -33,12 +78,11 @@ export default function RegisterPage() {
             navigate("/marketplace");
         } catch (e) {
             console.log(e);
-            setError("");
-            // error handling logic
+            setError(getRegisterErrorMessage(e));
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     return (
         <Box
@@ -195,6 +239,7 @@ export default function RegisterPage() {
                                 onChange={(event) => setUsername(event.target.value)}
                                 fullWidth
                                 autoComplete="username"
+                                disabled={loading}
                             />
 
                             <TextField
@@ -204,6 +249,7 @@ export default function RegisterPage() {
                                 onChange={(event) => setEmail(event.target.value)}
                                 fullWidth
                                 autoComplete="email"
+                                disabled={loading}
                             />
 
                             <TextField
@@ -213,6 +259,7 @@ export default function RegisterPage() {
                                 onChange={(event) => setPassword(event.target.value)}
                                 fullWidth
                                 autoComplete="new-password"
+                                disabled={loading}
                             />
 
                             <TextField
@@ -221,15 +268,16 @@ export default function RegisterPage() {
                                 value={role}
                                 onChange={(event) => setRole(event.target.value as Role)}
                                 fullWidth
+                                disabled={loading}
                             >
                                 <MenuItem value="SELLER">Seller</MenuItem>
                                 <MenuItem value="BUSINESS">Business</MenuItem>
                             </TextField>
 
                             {error && (
-                                <Typography variant="body2" color="error">
+                                <Alert severity="error">
                                     {error}
-                                </Typography>
+                                </Alert>
                             )}
 
                             <Button
