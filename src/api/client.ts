@@ -1,5 +1,5 @@
 import axios from "axios";
-import { clearAuth, getAccessToken } from "../components/helper/authStorage";
+import { getAccessToken } from "../components/helper/authStorage";
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
