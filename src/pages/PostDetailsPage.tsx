@@ -10,6 +10,7 @@ import {
     CircularProgress,
     Container,
     Divider,
+    LinearProgress,
     Stack,
     Typography,
 } from "@mui/material";
@@ -222,6 +223,43 @@ export default function PostDetailsPage() {
         );
     }
 
+    const qualityTotal = post.qualityRating?.total ?? null;
+
+    const qualityMetrics = post.qualityRating
+        ? [
+            { label: "Completeness", value: post.qualityRating.completeness },
+            { label: "Consistency", value: post.qualityRating.consistency },
+            { label: "Uniqueness", value: post.qualityRating.uniqueness },
+            { label: "Validity", value: post.qualityRating.validity },
+            { label: "Richness", value: post.qualityRating.richness },
+        ]
+        : [];
+
+    const qualityChipStyle =
+        qualityTotal == null
+            ? {
+                bgcolor: "rgba(100, 116, 139, 0.14)",
+                color: "#CBD5E1",
+                border: "1px solid rgba(148, 163, 184, 0.24)",
+            }
+            : qualityTotal >= 80
+                ? {
+                    bgcolor: "rgba(22, 163, 74, 0.14)",
+                    color: "#BBF7D0",
+                    border: "1px solid rgba(74, 222, 128, 0.26)",
+                }
+                : qualityTotal >= 60
+                    ? {
+                        bgcolor: "rgba(202, 138, 4, 0.14)",
+                        color: "#FDE68A",
+                        border: "1px solid rgba(250, 204, 21, 0.26)",
+                    }
+                    : {
+                        bgcolor: "rgba(220, 38, 38, 0.14)",
+                        color: "#FECACA",
+                        border: "1px solid rgba(248, 113, 113, 0.26)",
+                    };
+
     return (
         <Box
             sx={{
@@ -270,6 +308,19 @@ export default function PostDetailsPage() {
                                     border: "1px solid rgba(6, 182, 212, 0.26)",
                                     fontWeight: 900,
                                     letterSpacing: 0.2,
+                                }}
+                            />
+
+                            <Chip
+                                label={
+                                    qualityTotal == null
+                                        ? "Not rated"
+                                        : `Quality ${qualityTotal.toFixed(1)}%`
+                                }
+                                sx={{
+                                    width: "fit-content",
+                                    ...qualityChipStyle,
+                                    fontWeight: 900,
                                 }}
                             />
 
@@ -371,6 +422,129 @@ export default function PostDetailsPage() {
                                             {post.summary || "No summary available."}
                                         </Typography>
                                     </Box>
+                                </Stack>
+                            </CardContent>
+                        </Card>
+
+                        <Card
+                            elevation={0}
+                            sx={{
+                                bgcolor: "rgba(15, 23, 42, 0.82)",
+                                color: "#FFFFFF",
+                                border: "1px solid rgba(148, 163, 184, 0.18)",
+                                borderRadius: 4,
+                                boxShadow: "0 24px 70px rgba(0, 0, 0, 0.22)",
+                            }}
+                        >
+                            <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                                <Stack spacing={2.5}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: { xs: "column", sm: "row" },
+                                            justifyContent: "space-between",
+                                            alignItems: { xs: "flex-start", sm: "center" },
+                                            gap: 1.5,
+                                        }}
+                                    >
+                                        <Box>
+                                            <Typography variant="h5" sx={{ fontWeight: 950 }}>
+                                                Dataset quality
+                                            </Typography>
+
+                                            <Typography
+                                                variant="body2"
+                                                sx={{ color: "#94A3B8", mt: 0.6 }}
+                                            >
+                                                Automated checks for dataset completeness and usability.
+                                            </Typography>
+                                        </Box>
+
+                                        <Chip
+                                            label={
+                                                qualityTotal == null
+                                                    ? "Not rated"
+                                                    : `${qualityTotal.toFixed(1)}% overall`
+                                            }
+                                            sx={{
+                                                ...qualityChipStyle,
+                                                fontWeight: 950,
+                                                fontSize: "0.95rem",
+                                            }}
+                                        />
+                                    </Box>
+
+                                    <Divider sx={{ borderColor: "rgba(148, 163, 184, 0.16)" }} />
+
+                                    {qualityMetrics.length > 0 ? (
+                                        <Stack spacing={2}>
+                                            {qualityMetrics.map((metric) => {
+                                                const value = metric.value ?? 0;
+
+                                                return (
+                                                    <Box key={metric.label}>
+                                                        <Box
+                                                            sx={{
+                                                                display: "flex",
+                                                                justifyContent: "space-between",
+                                                                alignItems: "center",
+                                                                gap: 2,
+                                                                mb: 0.8,
+                                                            }}
+                                                        >
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{ color: "#CBD5E1", fontWeight: 800 }}
+                                                            >
+                                                                {metric.label}
+                                                            </Typography>
+
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{ color: "#E2E8F0", fontWeight: 900 }}
+                                                            >
+                                                                {metric.value == null
+                                                                    ? "N/A"
+                                                                    : `${metric.value.toFixed(1)}%`}
+                                                            </Typography>
+                                                        </Box>
+
+                                                        <LinearProgress
+                                                            variant="determinate"
+                                                            value={Math.min(100, Math.max(0, value))}
+                                                            sx={{
+                                                                height: 8,
+                                                                borderRadius: 999,
+                                                                bgcolor: "rgba(148, 163, 184, 0.14)",
+                                                                "& .MuiLinearProgress-bar": {
+                                                                    borderRadius: 999,
+                                                                    bgcolor:
+                                                                        value >= 80
+                                                                            ? "#22C55E"
+                                                                            : value >= 60
+                                                                                ? "#EAB308"
+                                                                                : "#EF4444",
+                                                                },
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                );
+                                            })}
+                                        </Stack>
+                                    ) : (
+                                        <Box
+                                            sx={{
+                                                p: 2.5,
+                                                borderRadius: 3,
+                                                bgcolor: "rgba(2, 6, 23, 0.48)",
+                                                border: "1px solid rgba(148, 163, 184, 0.16)",
+                                            }}
+                                        >
+                                            <Typography sx={{ color: "#94A3B8", lineHeight: 1.7 }}>
+                                                No quality rating is available for this dataset yet.
+                                            </Typography>
+                                        </Box>
+                                    )}
                                 </Stack>
                             </CardContent>
                         </Card>

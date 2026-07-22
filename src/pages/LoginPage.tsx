@@ -1,39 +1,86 @@
 import { useState } from "react";
 import { Login } from "../api/auth";
 import { useNavigate } from "react-router";
-import { Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
+import {
+    Alert,
+    Box,
+    Button,
+    Paper,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
 import { useAuth } from "../hooks/useAuth";
+import axios from "axios";
+
+type ApiErrorResponse = {
+    status?: number;
+    message?: string;
+};
 
 export default function LoginPage() {
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("");
-    const [error, setError] = useState<string>(""); //implement error handling
+    const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const navigate = useNavigate();
     const { login } = useAuth();
 
+    const getLoginErrorMessage = (e: unknown): string => {
+        if (axios.isAxiosError<ApiErrorResponse>(e)) {
+            const status = e.response?.status;
+            const message = e.response?.data?.message;
+
+            if (message) {
+                return message;
+            }
+
+            if (status === 404) {
+                return "Username does not exist.";
+            }
+
+            if (status === 401) {
+                return "Invalid password.";
+            }
+
+            if (status === 400) {
+                return "Invalid login details. Please check your inputs.";
+            }
+
+            if (status === 403) {
+                return "You are not allowed to sign in.";
+            }
+
+            if (status && status >= 500) {
+                return "Server error. Please try again later.";
+            }
+        }
+
+        return "Something went wrong while signing in. Please try again.";
+    };
+
     const handleSubmit: React.SubmitEventHandler<HTMLFormElement> = async (event) => {
         event.preventDefault();
+
         try {
+            setError("");
             setLoading(true);
+
             const res = await Login({
                 username,
-                password
+                password,
             });
 
             login(res);
 
-            console.log("USER:", localStorage.getItem("user"));
-            console.log("ACCESS:", localStorage.getItem("accessToken"));
-            console.log("REFRESH:", localStorage.getItem("refreshToken"));
             navigate("/");
         } catch (e) {
-            console.log(e);  // implement error handling
-            setError("");
+            console.log(e);
+            setError(getLoginErrorMessage(e));
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     return (
         <Box
@@ -190,6 +237,7 @@ export default function LoginPage() {
                                 onChange={(event) => setUsername(event.target.value)}
                                 fullWidth
                                 autoComplete="username"
+                                disabled={loading}
                             />
 
                             <TextField
@@ -199,12 +247,13 @@ export default function LoginPage() {
                                 onChange={(event) => setPassword(event.target.value)}
                                 fullWidth
                                 autoComplete="current-password"
+                                disabled={loading}
                             />
 
                             {error && (
-                                <Typography variant="body2" color="error">
+                                <Alert severity="error">
                                     {error}
-                                </Typography>
+                                </Alert>
                             )}
 
                             <Button

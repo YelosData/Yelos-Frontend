@@ -113,7 +113,7 @@ export default function CreatePostPage() {
             setLoading(true);
             setError("");
 
-            await createPost({
+            const createdPost = await createPost({
                 userId: user.id,
                 genre,
                 title: cleanedTitle,
@@ -121,7 +121,12 @@ export default function CreatePostPage() {
                 file,
             });
 
-            navigate("/marketplace");
+            navigate("/my-posts", {
+                state: {
+                    uploadQueued: true,
+                    postId: createdPost.id,
+                },
+            });
         } catch (err) {
             console.error(err);
             setError("Failed to create post. Check your backend logs or request body.");
@@ -631,7 +636,7 @@ export default function CreatePostPage() {
                                     >
                                         <Button
                                             variant="outlined"
-                                            onClick={() => navigate("/marketplace")}
+                                            onClick={() => navigate("/my-posts")}
                                             sx={{
                                                 borderRadius: 999,
                                                 textTransform: "none",

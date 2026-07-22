@@ -162,6 +162,9 @@ export default function Navbar() {
                         </>
                     )}
 
+                    {(isSeller || isBusiness) &&
+                        navButton("Transaction History", "/transaction-history")}
+
                     {isAdmin && (
                         <>
                             {navButton("Admin Dashboard", "/admin/dashboard")}
@@ -384,8 +387,6 @@ export default function Navbar() {
                                 </Box>
 
                                 <Divider />
-
-                                {isSeller && menuItem("Browse Requests", "/requests")} { }
 
                                 {isBusiness && (
                                     <> { }

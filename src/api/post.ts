@@ -111,3 +111,20 @@ export async function deletePost(
     params: { userId },
   });
 }
+
+export async function searchDataPosts(
+  query: string,
+  limit: number = 10,
+): Promise<DataPostPreview[]> {
+  const response = await apiClient.get<DataPostPreview[]>(
+    "/api/datapost/search",
+    {
+      params: {
+        q: query,
+        limit,
+      },
+    },
+  );
+
+  return response.data;
+}
