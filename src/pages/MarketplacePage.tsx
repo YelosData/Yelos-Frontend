@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router";
 import {
     Box,
@@ -14,10 +14,13 @@ import {
     Pagination,
     Select,
     Stack,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
     Typography,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
-import { getMarketplacePosts } from "../api/post";
+import { getMarketplacePosts, searchDataPosts } from "../api/post";
 import type {
     DataPostPreview,
     Genre,
@@ -27,6 +30,9 @@ import { useAuth } from "../hooks/useAuth";
 import { getPurchasesByUser } from "../api/purchase";
 
 const PAGE_SIZE = 12;
+const AI_SEARCH_LIMIT = 30;
+
+type SearchMode = "browse" | "ai";
 
 const genreOptions: Array<{ label: string; value: Genre | "ALL" }> = [
     { label: "All", value: "ALL" },
@@ -61,6 +67,37 @@ function formatDate(dateString: string): string {
     });
 }
 
+function filterAndSortPosts(
+    results: DataPostPreview[],
+    selectedGenre: Genre | "ALL",
+    sort: SortOption,
+): DataPostPreview[] {
+    const filtered =
+        selectedGenre === "ALL"
+            ? results
+            : results.filter((post) => post.genre === selectedGenre);
+
+    return [...filtered].sort((a, b) => {
+        if (sort === "newest") {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+
+        if (sort === "oldest") {
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        }
+
+        if (sort === "priceAsc") {
+            return Number(a.price) - Number(b.price);
+        }
+
+        if (sort === "priceDesc") {
+            return Number(b.price) - Number(a.price);
+        }
+
+        return 0;
+    });
+}
+
 export default function MarketplacePage() {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -77,22 +114,53 @@ export default function MarketplacePage() {
         new Set()
     );
 
+    const [searchMode, setSearchMode] = useState<SearchMode>("browse");
+    const [searchInput, setSearchInput] = useState("");
+    const [activeSearchQuery, setActiveSearchQuery] = useState("");
+
+    const isAiMode = searchMode === "ai";
+    const hasActiveAiQuery = isAiMode && activeSearchQuery.trim().length > 0;
+
     useEffect(() => {
         async function fetchMarketplacePosts() {
             try {
                 setLoading(true);
                 setError("");
 
-                const result = await getMarketplacePosts({
-                    page: page - 1,
-                    size: PAGE_SIZE,
-                    genre: selectedGenre === "ALL" ? undefined : selectedGenre,
-                    sort,
-                });
+                if (isAiMode && !activeSearchQuery.trim()) {
+                    setPosts([]);
+                    setTotalPages(1);
+                    setTotalElements(0);
+                    return;
+                }
 
-                setPosts(result.content);
-                setTotalPages(result.totalPages === 0 ? 1 : result.totalPages);
-                setTotalElements(result.totalElements);
+                if (hasActiveAiQuery) {
+                    const aiResults = await searchDataPosts(
+                        activeSearchQuery.trim(),
+                        AI_SEARCH_LIMIT,
+                    );
+
+                    const filteredAndSortedResults = filterAndSortPosts(
+                        aiResults,
+                        selectedGenre,
+                        sort,
+                    );
+
+                    setPosts(filteredAndSortedResults);
+                    setTotalPages(1);
+                    setTotalElements(filteredAndSortedResults.length);
+                } else {
+                    const result = await getMarketplacePosts({
+                        page: page - 1,
+                        size: PAGE_SIZE,
+                        genre: selectedGenre === "ALL" ? undefined : selectedGenre,
+                        sort,
+                    });
+
+                    setPosts(result.content);
+                    setTotalPages(result.totalPages === 0 ? 1 : result.totalPages);
+                    setTotalElements(result.totalElements);
+                }
 
                 if (user?.role === "BUSINESS") {
                     const purchases = await getPurchasesByUser(user.id);
@@ -107,14 +175,26 @@ export default function MarketplacePage() {
                 }
             } catch (err) {
                 console.error(err);
-                setError("Failed to load marketplace posts.");
+                setError(
+                    hasActiveAiQuery
+                        ? "Failed to run AI search."
+                        : "Failed to load marketplace posts."
+                );
             } finally {
                 setLoading(false);
             }
         }
 
         fetchMarketplacePosts();
-    }, [page, selectedGenre, sort, user]);
+    }, [
+        page,
+        selectedGenre,
+        sort,
+        user,
+        isAiMode,
+        hasActiveAiQuery,
+        activeSearchQuery,
+    ]);
 
     function handleGenreChange(event: SelectChangeEvent) {
         setSelectedGenre(event.target.value as Genre | "ALL");
@@ -128,6 +208,46 @@ export default function MarketplacePage() {
 
     function handlePageChange(_: ChangeEvent<unknown>, nextPage: number) {
         setPage(nextPage);
+    }
+
+    function handleSearchModeChange(
+        _: MouseEvent<HTMLElement>,
+        nextMode: SearchMode | null,
+    ) {
+        if (!nextMode) {
+            return;
+        }
+
+        setSearchMode(nextMode);
+        setPage(1);
+        setError("");
+
+        if (nextMode === "browse") {
+            setSearchInput("");
+            setActiveSearchQuery("");
+        }
+    }
+
+    function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        const query = searchInput.trim();
+
+        if (!query) {
+            setActiveSearchQuery("");
+            setPage(1);
+            return;
+        }
+
+        setActiveSearchQuery(query);
+        setPage(1);
+    }
+
+    function handleClearSearch() {
+        setSearchInput("");
+        setActiveSearchQuery("");
+        setError("");
+        setPage(1);
     }
 
     return (
@@ -202,9 +322,8 @@ export default function MarketplacePage() {
                                 fontSize: { xs: "1rem", md: "1.08rem" },
                             }}
                         >
-                            Browse datasets by genre, compare credit prices, and inspect
-                            marketplace listings before purchase. Search and advanced filters
-                            can be added after the base marketplace flow is stable.
+                            Browse datasets by genre, compare credit prices, or use AI
+                            semantic search to describe the kind of dataset you need.
                         </Typography>
                     </Stack>
                 </Container>
@@ -214,7 +333,7 @@ export default function MarketplacePage() {
                 <Box
                     sx={{
                         display: "grid",
-                        gridTemplateColumns: { xs: "1fr", md: "280px 1fr" },
+                        gridTemplateColumns: { xs: "1fr", md: "360px 1fr" },
                         gap: 3,
                     }}
                 >
@@ -235,11 +354,174 @@ export default function MarketplacePage() {
                             <Stack spacing={2.5}>
                                 <Stack spacing={0.5}>
                                     <Typography sx={{ fontWeight: 950, color: "#FFFFFF" }}>
-                                        Filters
+                                        Discovery mode
                                     </Typography>
 
                                     <Typography variant="body2" sx={{ color: "#94A3B8" }}>
-                                        Narrow the marketplace by genre and sort order.
+                                        Choose normal browsing or AI semantic search.
+                                    </Typography>
+                                </Stack>
+
+                                <ToggleButtonGroup
+                                    exclusive
+                                    size="small"
+                                    value={searchMode}
+                                    onChange={handleSearchModeChange}
+                                    fullWidth
+                                    sx={{
+                                        bgcolor: "rgba(2, 6, 23, 0.42)",
+                                        borderRadius: 999,
+                                        p: 0.35,
+                                        "& .MuiToggleButton-root": {
+                                            flex: 1,
+                                            border: 0,
+                                            borderRadius: "999px !important",
+                                            color: "#94A3B8",
+                                            textTransform: "none",
+                                            fontWeight: 900,
+                                            "&.Mui-selected": {
+                                                color: "#E0F2FE",
+                                                bgcolor: "rgba(6, 182, 212, 0.16)",
+                                            },
+                                            "&.Mui-selected:hover": {
+                                                bgcolor: "rgba(6, 182, 212, 0.22)",
+                                            },
+                                        },
+                                    }}
+                                >
+                                    <ToggleButton value="browse">
+                                        Browse
+                                    </ToggleButton>
+                                    <ToggleButton value="ai">
+                                        AI Search
+                                    </ToggleButton>
+                                </ToggleButtonGroup>
+
+                                {isAiMode && (
+                                    <Box
+                                        component="form"
+                                        onSubmit={handleSearchSubmit}
+                                        sx={{
+                                            p: 2.25,
+                                            borderRadius: 3,
+                                            bgcolor: "rgba(168, 85, 247, 0.08)",
+                                            border: "1px solid rgba(168, 85, 247, 0.22)",
+                                        }}
+                                    >
+                                        <Stack spacing={1.5}>
+                                            <Stack spacing={0.4}>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: "#D8B4FE",
+                                                        fontWeight: 900,
+                                                        letterSpacing: 0.7,
+                                                    }}
+                                                >
+                                                    DESCRIBE YOUR DATASET
+                                                </Typography>
+
+                                                <Typography variant="caption" sx={{ color: "#94A3B8" }}>
+                                                    Search by meaning, not exact keywords.
+                                                </Typography>
+                                            </Stack>
+
+                                            <TextField
+                                                fullWidth
+                                                multiline
+                                                minRows={4}
+                                                maxRows={7}
+                                                value={searchInput}
+                                                onChange={(event) => setSearchInput(event.target.value)}
+                                                placeholder="Example: I need customer support conversations about refund requests, delivery delays, and complaints about damaged products."
+                                                sx={{
+                                                    textarea: {
+                                                        color: "#FFFFFF",
+                                                        lineHeight: 1.65,
+                                                    },
+                                                    "& .MuiOutlinedInput-root": {
+                                                        alignItems: "flex-start",
+                                                        borderRadius: 3,
+                                                        bgcolor: "rgba(2, 6, 23, 0.5)",
+                                                        "& fieldset": {
+                                                            borderColor: "rgba(168, 85, 247, 0.28)",
+                                                        },
+                                                        "&:hover fieldset": {
+                                                            borderColor: "rgba(216, 180, 254, 0.55)",
+                                                        },
+                                                        "&.Mui-focused fieldset": {
+                                                            borderColor: "#D8B4FE",
+                                                        },
+                                                    },
+                                                    "& .MuiInputBase-input::placeholder": {
+                                                        color: "#64748B",
+                                                        opacity: 1,
+                                                    },
+                                                }}
+                                            />
+
+                                            <Stack direction="row" spacing={1}>
+                                                <Button
+                                                    type="submit"
+                                                    fullWidth
+                                                    disabled={!searchInput.trim()}
+                                                    variant="contained"
+                                                    sx={{
+                                                        borderRadius: 999,
+                                                        textTransform: "none",
+                                                        fontWeight: 950,
+                                                        bgcolor: "#7C3AED",
+                                                        "&:hover": {
+                                                            bgcolor: "#6D28D9",
+                                                        },
+                                                        "&.Mui-disabled": {
+                                                            bgcolor: "rgba(148, 163, 184, 0.14)",
+                                                            color: "#64748B",
+                                                        },
+                                                    }}
+                                                >
+                                                    Run AI Search
+                                                </Button>
+
+                                                {activeSearchQuery && (
+                                                    <Button
+                                                        type="button"
+                                                        onClick={handleClearSearch}
+                                                        variant="outlined"
+                                                        sx={{
+                                                            borderRadius: 999,
+                                                            textTransform: "none",
+                                                            fontWeight: 900,
+                                                            color: "#E9D5FF",
+                                                            borderColor: "rgba(216, 180, 254, 0.32)",
+                                                            "&:hover": {
+                                                                borderColor: "#D8B4FE",
+                                                                bgcolor: "rgba(168, 85, 247, 0.08)",
+                                                            },
+                                                        }}
+                                                    >
+                                                        Clear
+                                                    </Button>
+                                                )}
+                                            </Stack>
+
+                                            <Typography variant="caption" sx={{ color: "#94A3B8" }}>
+                                                AI search may call the embedding service. Later, this can
+                                                consume credits or usage tokens.
+                                            </Typography>
+                                        </Stack>
+                                    </Box>
+                                )}
+
+                                <Stack spacing={0.5}>
+                                    <Typography sx={{ fontWeight: 950, color: "#FFFFFF" }}>
+                                        {isAiMode ? "AI filters" : "Browse filters"}
+                                    </Typography>
+
+                                    <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                                        {isAiMode
+                                            ? "Filter and sort the semantic matches returned by AI."
+                                            : "Narrow the marketplace by genre and sort order."}
                                     </Typography>
                                 </Stack>
 
@@ -333,23 +615,27 @@ export default function MarketplacePage() {
                                     sx={{
                                         p: 2,
                                         borderRadius: 3,
-                                        bgcolor: "rgba(6, 182, 212, 0.08)",
-                                        border: "1px solid rgba(6, 182, 212, 0.18)",
+                                        bgcolor: isAiMode
+                                            ? "rgba(168, 85, 247, 0.08)"
+                                            : "rgba(6, 182, 212, 0.08)",
+                                        border: isAiMode
+                                            ? "1px solid rgba(168, 85, 247, 0.18)"
+                                            : "1px solid rgba(6, 182, 212, 0.18)",
                                     }}
                                 >
                                     <Typography
                                         variant="caption"
                                         sx={{
-                                            color: "#67E8F9",
+                                            color: isAiMode ? "#D8B4FE" : "#67E8F9",
                                             fontWeight: 900,
                                             letterSpacing: 0.7,
                                         }}
                                     >
-                                        RESULT COUNT
+                                        {isAiMode ? "AI MATCHES" : "RESULT COUNT"}
                                     </Typography>
 
                                     <Typography sx={{ mt: 0.3, fontWeight: 950 }}>
-                                        {totalElements} datasets
+                                        {totalElements} {isAiMode ? "matches" : "datasets"}
                                     </Typography>
                                 </Box>
                             </Stack>
@@ -370,25 +656,37 @@ export default function MarketplacePage() {
                                     variant="h5"
                                     sx={{ color: "#FFFFFF", fontWeight: 950 }}
                                 >
-                                    Marketplace listings
+                                    {isAiMode
+                                        ? "AI semantic search"
+                                        : "Marketplace listings"}
                                 </Typography>
 
                                 <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.5 }}>
-                                    Page {page} of {totalPages}
+                                    {isAiMode
+                                        ? activeSearchQuery
+                                            ? `Semantic matches for "${activeSearchQuery}"`
+                                            : "Enter a description to search datasets by meaning."
+                                        : `Page ${page} of ${totalPages}`}
                                 </Typography>
                             </Box>
 
                             <Chip
                                 label={
-                                    selectedGenre === "ALL"
-                                        ? "All genres"
-                                        : formatGenre(selectedGenre)
+                                    isAiMode
+                                        ? "AI Search"
+                                        : selectedGenre === "ALL"
+                                            ? "All genres"
+                                            : formatGenre(selectedGenre)
                                 }
                                 sx={{
                                     width: "fit-content",
-                                    bgcolor: "rgba(37, 99, 235, 0.14)",
-                                    color: "#BFDBFE",
-                                    border: "1px solid rgba(37, 99, 235, 0.24)",
+                                    bgcolor: isAiMode
+                                        ? "rgba(168, 85, 247, 0.14)"
+                                        : "rgba(37, 99, 235, 0.14)",
+                                    color: isAiMode ? "#E9D5FF" : "#BFDBFE",
+                                    border: isAiMode
+                                        ? "1px solid rgba(168, 85, 247, 0.24)"
+                                        : "1px solid rgba(37, 99, 235, 0.24)",
                                     fontWeight: 900,
                                 }}
                             />
@@ -435,11 +733,17 @@ export default function MarketplacePage() {
                                 <CardContent sx={{ p: 4 }}>
                                     <Stack spacing={1}>
                                         <Typography variant="h6" sx={{ fontWeight: 950 }}>
-                                            No datasets found
+                                            {isAiMode && !activeSearchQuery
+                                                ? "Start an AI search"
+                                                : "No datasets found"}
                                         </Typography>
 
                                         <Typography sx={{ color: "#94A3B8" }}>
-                                            Try selecting another genre or changing the sort option.
+                                            {isAiMode && !activeSearchQuery
+                                                ? "Describe the dataset you want, then run AI Search."
+                                                : isAiMode
+                                                    ? "Try a broader AI search query or adjust the filters."
+                                                    : "Try selecting another genre or changing the sort option."}
                                         </Typography>
                                     </Stack>
                                 </CardContent>
@@ -460,6 +764,33 @@ export default function MarketplacePage() {
                             >
                                 {posts.map((post) => {
                                     const purchased = purchasedPostIds.has(post.id);
+                                    const qualityTotal = post.qualityRating?.total;
+                                    const hasQualityRating = typeof qualityTotal === "number";
+
+                                    const qualityChipStyle =
+                                        !hasQualityRating
+                                            ? {
+                                                bgcolor: "rgba(100, 116, 139, 0.12)",
+                                                color: "#CBD5E1",
+                                                border: "1px solid rgba(148, 163, 184, 0.22)",
+                                            }
+                                            : qualityTotal >= 80
+                                                ? {
+                                                    bgcolor: "rgba(34, 197, 94, 0.12)",
+                                                    color: "#BBF7D0",
+                                                    border: "1px solid rgba(34, 197, 94, 0.24)",
+                                                }
+                                                : qualityTotal >= 60
+                                                    ? {
+                                                        bgcolor: "rgba(245, 158, 11, 0.12)",
+                                                        color: "#FDE68A",
+                                                        border: "1px solid rgba(245, 158, 11, 0.24)",
+                                                    }
+                                                    : {
+                                                        bgcolor: "rgba(239, 68, 68, 0.12)",
+                                                        color: "#FECACA",
+                                                        border: "1px solid rgba(239, 68, 68, 0.24)",
+                                                    };
 
                                     return (
                                         <Card
@@ -520,6 +851,19 @@ export default function MarketplacePage() {
                                                                 }}
                                                             />
 
+                                                            <Chip
+                                                                label={
+                                                                    hasQualityRating
+                                                                        ? `Quality ${qualityTotal.toFixed(1)}%`
+                                                                        : "Not rated"
+                                                                }
+                                                                size="small"
+                                                                sx={{
+                                                                    ...qualityChipStyle,
+                                                                    fontWeight: 900,
+                                                                }}
+                                                            />
+
                                                             {purchased && (
                                                                 <Chip
                                                                     label="Purchased"
@@ -545,7 +889,6 @@ export default function MarketplacePage() {
                                                                     }}
                                                                 />
                                                             )}
-
                                                         </Stack>
 
                                                         <Typography
@@ -649,7 +992,7 @@ export default function MarketplacePage() {
                             </Box>
                         )}
 
-                        {!loading && !error && totalPages > 1 && (
+                        {!loading && !error && !isAiMode && totalPages > 1 && (
                             <Box
                                 sx={{
                                     display: "flex",

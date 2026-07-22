@@ -14,6 +14,7 @@ import MyRequestsPage from "./pages/MyRequestsPage";
 import RequestDetailPage from "./pages/RequestDetailPage";
 import RequestMarketplacePage from "./pages/RequestMarketplacePage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import TransactionHistoryPage from "./pages/TransactionHistortyPage";
 
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/requests/:requestId" element={<RequestDetailPage />} />
         <Route path="/request-marketplace" element={<RequestMarketplacePage />} />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        <Route path="/transaction-history" element={<TransactionHistoryPage />} />
       </Routes>
     </>
   )
