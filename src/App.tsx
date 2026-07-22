@@ -14,7 +14,7 @@ import MyRequestsPage from "./pages/MyRequestsPage";
 import RequestDetailPage from "./pages/RequestDetailPage";
 import RequestMarketplacePage from "./pages/RequestMarketplacePage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
-import TransactionHistoryPage from "./pages/TransactionHistortyPage";
+import TransactionHistoryPage from "./pages/TransactionHistoryPage";
 
 
 export default function App() {
